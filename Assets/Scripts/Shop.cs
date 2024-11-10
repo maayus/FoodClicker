@@ -12,10 +12,24 @@ public class Shop : MonoBehaviour
     public int cpb = 1;
     public float cookTime = 1;
 
+    [Header("Upgrades")]
+
+    public ShopButton upgradeButton;
+    public float upgradePrice = 100;
+    public int upgradeCount = 0;
+
     private Clicker clicker;
 
     private void Start() 
     {
+        bakerCount = PlayerPrefs.GetInt("bakerCount", 0);
+        bakerPrice = PlayerPrefs.GetFloat("bakerPrice", 10);
+        bakerButton.UpdateText((int)Mathf.Ceil(bakerPrice), bakerCount);
+
+        upgradeCount = PlayerPrefs.GetInt("upgradeCount", 0);
+        upgradePrice = PlayerPrefs.GetFloat("upgradePrice", 100);
+        upgradeButton.UpdateText((int)Mathf.Ceil(upgradePrice), bakerCount);
+
         clicker = FindObjectOfType<Clicker>();
         InvokeRepeating("Cook", 0, cookTime);
     }
@@ -33,6 +47,23 @@ public class Shop : MonoBehaviour
             bakerButton.UpdateText(realPrice, ++bakerCount);
         }
     }
+
+    public void BuyUpgrade()
+    {
+        var realPrice = (int)Mathf.Ceil(upgradePrice);
+        if (clicker.clicks >= realPrice)
+        {
+            clicker.clicks -= realPrice;
+            UiManager.instance.UpdateClicks(clicker.clicks);
+
+            upgradePrice *= 2; // 100% increase
+            realPrice = (int)Mathf.Ceil(upgradePrice);
+            upgradeButton.UpdateText(realPrice, ++upgradeCount);
+
+            clicker.UpgradeClicker();
+        }
+    }
+
     public void Cook()
     {
         var particleCount = Mathf.Min(bakerCount * cpb, 100);
@@ -40,5 +71,27 @@ public class Shop : MonoBehaviour
 
         clicker.clicks += bakerCount * cpb;
         UiManager.instance.UpdateClicks(clicker.clicks);
+    }
+
+    private void OnApplicationPause(bool pause)
+    {
+        if (pause)
+        {
+            Save();
+        }
+    }
+
+    private void OnApplicationQuit()
+    {
+        Save();
+    }
+
+    private void Save()
+    {
+        PlayerPrefs.SetInt("bakerCount", bakerCount);
+        PlayerPrefs.SetFloat("bakerPrice", bakerPrice);
+        PlayerPrefs.SetInt("upgradeCount", upgradeCount);
+        PlayerPrefs.SetFloat("upgradePrice", upgradePrice);
+        PlayerPrefs.Save();
     }
 }

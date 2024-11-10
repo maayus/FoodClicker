@@ -1,4 +1,5 @@
 using DG.Tweening;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Clicker : MonoBehaviour
@@ -14,12 +15,33 @@ public class Clicker : MonoBehaviour
     [Header("VFX")]
     public ParticleSystem clickParticles;
 
+    [Header("Settings")]
+    public int clickValue = 1;
+    public List<GameObject> upgrades;
+
     [HideInInspector]public int clicks = 0;
 
     private AudioSource audioSource;
-   
+
+    private int upgradeIndex = 0;
+    public ShopButton upgradeButton;
+
     private void Start() 
     {
+        clicks = PlayerPrefs.GetInt("clicks", 0);
+        upgradeIndex = PlayerPrefs.GetInt("upgradeIndex", 0);
+        clickValue = PlayerPrefs.GetInt("clickValue", 1);
+        for (int i = 0; i < upgrades.Count; i++)
+        {
+            if (i != upgradeIndex)
+            {
+                upgrades[i].SetActive(false);
+            }
+            else
+            {
+                upgrades[upgradeIndex].SetActive(true);
+            }
+        }
         audioSource = GetComponent<AudioSource>();
     }
 
@@ -39,6 +61,43 @@ public class Clicker : MonoBehaviour
             .ChangeStartValue(scale * Vector3.one)
             .SetEase(ease);//ease - how the animation will be played
             //.SetLoops(2, LoopType.Yoyo);
+    }
+
+    private void OnApplicationPause(bool pause)
+    {
+        if (pause)
+        {
+            Save();
+        }
+    }
+
+    private void OnApplicationQuit()
+    {
+        Save();
+    }
+
+    private void Save()
+    {
+        PlayerPrefs.SetInt("clicks", clicks);
+        PlayerPrefs.SetInt("upgradeIndex", upgradeIndex);
+        PlayerPrefs.SetInt("clickValue", clickValue);
+        PlayerPrefs.Save();
+    }
+
+    public void UpgradeClicker()
+    {
+        if (upgradeIndex < upgrades.Count)
+        {
+            upgrades[upgradeIndex].SetActive(false);
+            upgradeIndex++;
+            upgrades[upgradeIndex].SetActive(true);
+
+            clickValue++;
+        }
+        if (upgradeIndex == upgrades.Count)
+        {
+            Destroy(upgradeButton);
+        }
     }
 
 }
